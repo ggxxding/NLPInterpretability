@@ -10,9 +10,6 @@ class dataset(Dataset):
         self.sentence2 = data.sentence2.values
         self.label = data.gold_label.values
         self.len = data.shape[0]
-        self.label_dict = {'contradiction':2, 
-                           'neutral':1,
-                           'entailment':0}
         # self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     def __len__(self):
@@ -20,7 +17,7 @@ class dataset(Dataset):
     def __getitem__(self, item):
         tokens = self.sentence1[item]+ ' [SEP] ' + self.sentence2[item]
         # ids = self.tokenizer.encode(tokens, padding = 'max_length', max_length = 128)
-        return tokens, self.label_dict[self.label[item]]
+        return tokens, self.label[item]
     
 
 if __name__ == '__main__':
