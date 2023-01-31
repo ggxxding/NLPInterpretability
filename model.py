@@ -7,6 +7,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 do_train = True
+model_name = 'bert-base-uncased'
 
 # hyperparam
 hidden_dropout_prob = 0.3
@@ -14,7 +15,7 @@ num_labels = 3
 learning_rate = 1e-5
 weight_decay = 1e-2
 epochs = 3
-batch_size = 16
+batch_size = 32
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
 
@@ -27,10 +28,10 @@ def main():
         valid_dataset = dataset('../data/snli/snli_1.0_dev.txt')
         valid_dataloader = DataLoader(dataset=valid_dataset,batch_size=batch_size ,shuffle=True)
 
-        model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels = num_labels, hidden_dropout_prob = hidden_dropout_prob)
+        model = BertForSequenceClassification.from_pretrained(model_name, num_labels = num_labels, hidden_dropout_prob = hidden_dropout_prob)
         model.to(device)
 
-        tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+        tokenizer = BertTokenizer.from_pretrained(model_name)
 
         # 定义优化器和损失函数
         # Prepare optimizer and schedule (linear warmup and decay)
@@ -77,8 +78,10 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         epoch_loss += loss.item()
         epoch_acc += acc
 
-        if i%10 == 0 :
+        if i % 200 == 0 :
             print("step ",i+1 ,"current loss:", epoch_loss/(i+1), "current acc:", epoch_acc/((i+1)*len(label)))
+    torch.save(model.state_dict(), './data/' + model_name + '.pt')
+    print('model saved')
     return epoch_loss/len(dataloader), epoch_acc/len(dataloader.dataset)
 
 
