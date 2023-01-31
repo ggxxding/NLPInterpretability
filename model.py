@@ -21,10 +21,10 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
 def main():
     if do_train:
-        train_dataset = dataset('/Users/ggxxding/Documents/GitHub/data/snli/snli_1.0_train.txt')
+        train_dataset = dataset('../data/snli/snli_1.0_train.txt')
         train_dataloader = DataLoader(dataset=train_dataset,batch_size=batch_size ,shuffle=True)
 
-        valid_dataset = dataset('/Users/ggxxding/Documents/GitHub/data/snli/snli_1.0_dev.txt')
+        valid_dataset = dataset('../data/snli/snli_1.0_dev.txt')
         valid_dataloader = DataLoader(dataset=valid_dataset,batch_size=batch_size ,shuffle=True)
 
         model = BertForSequenceClassification.from_pretrained('bert-base-uncased', num_labels = num_labels, hidden_dropout_prob = hidden_dropout_prob)
