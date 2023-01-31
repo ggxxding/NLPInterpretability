@@ -64,10 +64,10 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         optimizer.zero_grad()
         output = model(**inp, labels = label)
         
-        pred_prob = output.logits
+        pred_prob = output[1]
         pred_label = pred_prob.argmax(dim = 1)
         # loss = criterion(pred_prob.view(-1,num_labels), label.view(-1))
-        loss = output.loss
+        loss = output[0]
 
         acc = ((pred_label == label.view(-1)).sum()).item()
 
@@ -95,8 +95,8 @@ def evaluate(model, dataloader, tokenizer, device):
 
             output = model(**inp, labels=label)
 
-            pred_label = output.logits.argmax(dim=1)
-            loss = output.loss
+            pred_label = output[1].argmax(dim=1)
+            loss = output[0]
             acc = ((pred_label == label.view(-1)).sum()).item()
 
             epoch_loss += loss.item()
