@@ -31,8 +31,6 @@ def main():
         model.to(device)
 
         tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-        inp=tokenizer(('test a test','test test'), padding = 'max_length', max_length=6, add_special_tokens =True,return_tensors='pt').to('mps')
-        out= model(**inp,labels = torch.tensor([0,1]).to('mps'))
 
         # 定义优化器和损失函数
         # Prepare optimizer and schedule (linear warmup and decay)
