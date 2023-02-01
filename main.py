@@ -14,10 +14,16 @@ parser.add_argument("--do_eval",
                     default = False,
                     action = "store_true",
                     help = 'True or False')
-parser.add_argument("--eval_dir",
-                    default = '../data',
-                    type=str
-                    )
+
+parser.add_argument("--dataset",
+                    default = 'snli_ori',
+                    type = str,
+                    help = 'snli_ori/snli_aug/anli/hans')
+parser.add_argument("--model",
+                    default = 'bert-base-uncased',
+                    type = str,
+                    help = 'model name')
+
 args = parser.parse_args()
 model_name = 'bert-base-uncased'
 
@@ -36,10 +42,17 @@ def main():
     if not args.do_train and not args.do_eval:
         raise ValueError("At lease one of 'do_train' or 'do_eval' must be True")
     if args.do_train:
-        train_dataset = dataset('../data/snli/snli_1.0_train.txt')
+        if args.dataset == 'snli_ori':
+            train_dir = '../data/NLI/original/train.tsv'
+            dev_dir = '../data/NLI/original/dev.tsv'
+        elif args.dataset == 'snli_aug':
+            train_dir = '../data/NLI/all_combined/train.tsv'
+            dev_dir = '../data/NLI/all_combined/dev.tsv'
+
+        train_dataset = dataset(train_dir)
         train_dataloader = DataLoader(dataset=train_dataset,batch_size=batch_size ,shuffle=True)
 
-        valid_dataset = dataset('../data/snli/snli_1.0_dev.txt')
+        valid_dataset = dataset(dev_dir)
         valid_dataloader = DataLoader(dataset=valid_dataset,batch_size=batch_size ,shuffle=False)
 
         model = BertForSequenceClassification.from_pretrained(model_name, 
@@ -67,13 +80,18 @@ def main():
             valid_loss, valid_acc = evaluate(model, valid_dataloader, tokenizer, device)
             print('valid_loss: ', valid_loss, '\t valid_acc: ', valid_acc)
     if args.do_eval:
-        test_dataset = dataset(args.eval_dir)
+        if args.dataset == 'snli_ori':
+            eval_dir = '../data/NLI/original/test.tsv'
+        elif args.dataset == 'snli_aug':
+            eval_dir = '../data/NLI/all_combined/test.tsv'
+
+        test_dataset = dataset(eval_dir)
         test_dataloader = DataLoader(dataset=test_dataset,batch_size=batch_size ,shuffle=False)
         model = BertForSequenceClassification.from_pretrained(model_name, 
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
                                                               output_hidden_states = True)
-        model.load_state_dict(torch.load( './data/' + model_name + '.pt' ) )
+        model.load_state_dict(torch.load( './data/' + args.model + args.dataset + '.pt' ) )
         print('model loaded from %s'%('./data/' + model_name + '.pt'))
         model.to(device)
         tokenizer = BertTokenizer.from_pretrained(model_name)
@@ -93,9 +111,7 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
         optimizer.zero_grad()
         output = model(**inp, labels = label)
-        print(len(output[2]))
-        print(output[2][1].shape)
-        print(output[2])
+
         
         pred_prob = output[1]
         pred_label = pred_prob.argmax(dim = 1)
@@ -110,9 +126,9 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         epoch_loss += loss.item()
         epoch_acc += acc
 
-        if i % 200 == 0 :
+        if i % 10 == 0 :
             print("step ",i+1 ,"current loss:", epoch_loss/(i+1), "current acc:", epoch_acc/((i+1)*len(label)))
-    torch.save(model.state_dict(), './data/' + model_name + '.pt')
+    torch.save(model.state_dict(),  './data/' + args.model + args.dataset + '.pt')
     print('model saved')
     return epoch_loss/len(dataloader), epoch_acc/len(dataloader.dataset)
 
