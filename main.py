@@ -14,6 +14,10 @@ parser.add_argument("--do_eval",
                     default = False,
                     action = "store_true",
                     help = 'True or False')
+parser.add_argument("--eval_dir",
+                    default = '../data',
+                    type=str
+                    )
 args = parser.parse_args()
 model_name = 'bert-base-uncased'
 
@@ -63,7 +67,7 @@ def main():
             valid_loss, valid_acc = evaluate(model, valid_dataloader, tokenizer, device)
             print('valid_loss: ', valid_loss, '\t valid_acc: ', valid_acc)
     if args.do_eval:
-        test_dataset = dataset('../data/snli/snli_1.0_test.txt')
+        test_dataset = dataset(args.eval_dir)
         test_dataloader = DataLoader(dataset=test_dataset,batch_size=batch_size ,shuffle=False)
         model = BertForSequenceClassification.from_pretrained(model_name, 
                                                               num_labels = num_labels, 
