@@ -9,20 +9,20 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--do_train",
                     default = False,
                     action = "store_true",
-                    help = 'True or False')
+                    help = 'default: False')
 parser.add_argument("--do_eval",
                     default = False,
                     action = "store_true",
-                    help = 'True or False')
+                    help = 'default: False')
 
 parser.add_argument("--dataset",
                     default = 'snli_ori',
                     type = str,
-                    help = 'snli_ori/snli_aug/anli/hans')
+                    help = 'snli_ori(default)/snli_aug/anli/hans')
 parser.add_argument("--model",
                     default = 'bert-base-uncased',
                     type = str,
-                    help = 'model name')
+                    help = 'model name, default: bert-base-uncased')
 
 args = parser.parse_args()
 model_name = 'bert-base-uncased'
@@ -32,7 +32,7 @@ hidden_dropout_prob = 0.3
 num_labels = 3
 learning_rate = 1e-5
 weight_decay = 1e-2
-epochs = 3
+epochs = 20
 batch_size = 32
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
@@ -67,18 +67,24 @@ def main():
         # 设置 bias 和 LayerNorm.weight 不使用 weight_decay
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
-                {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
-                {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+                {'params': [p for n, p in list(model.named_parameters()) if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
+                {'params': [p for n, p in list(model.named_parameters()) if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
+
+        # no_decay = ['bias', 'gamma', 'beta']
+        # optimizer_grouped_parameters = [
+        #     {'params': [p for n, p in list(model.named_parameters()) if not any(nd in n for nd in no_decay)], 'weight_decay_rate': 0.01},
+        # {'params': [p for n, p in list(model.named_parameters()) if any(nd in n for nd in no_decay)], 'weight_decay_rate': 0.0}
+        # ]
 
         optimizer = AdamW(optimizer_grouped_parameters, lr=learning_rate)
         criterion = nn.CrossEntropyLoss()
 
         for i in range(epochs):
             train_loss, train_acc = train(model, tokenizer, train_dataloader, optimizer, criterion, device)
-            print('train_loss: ', train_loss, '\t train_acc: ', train_acc)
+            print('epoch %2d, train loss: %.3f, train_acc: %.3f'%(i,train_loss,train_acc))
             valid_loss, valid_acc = evaluate(model, valid_dataloader, tokenizer, device)
-            print('valid_loss: ', valid_loss, '\t valid_acc: ', valid_acc)
+            print('        , valid loss: %.3f, valid_acc: %.3f'%(valid_loss,valid_acc))
     if args.do_eval:
         if args.dataset == 'snli_ori':
             eval_dir = '../data/NLI/original/test.tsv'
@@ -91,12 +97,12 @@ def main():
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
                                                               output_hidden_states = True)
-        model.load_state_dict(torch.load( './data/' + args.model + args.dataset + '.pt' ) )
-        print('model loaded from %s'%('./data/' + model_name + '.pt'))
+        model.load_state_dict(torch.load( './data/' + args.model + '_'+ args.dataset + '.pt' ) )
+        print('model loaded from %s'%('./data/' + args.model + '_'+ args.dataset + '.pt'))
         model.to(device)
         tokenizer = BertTokenizer.from_pretrained(model_name)
         test_loss, test_acc = test(model, test_dataloader, tokenizer, device)
-        print('test acc: ', test_acc)
+        print('test acc: %.3f'% test_acc)
 
 
 
@@ -127,9 +133,9 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         epoch_acc += acc
 
         if i % 10 == 0 :
-            print("step ",i+1 ,"current loss:", epoch_loss/(i+1), "current acc:", epoch_acc/((i+1)*len(label)))
-    torch.save(model.state_dict(),  './data/' + args.model + args.dataset + '.pt')
-    print('model saved')
+            print("step %3d, loss: %.3f, acc: %.3f"%( i+1, epoch_loss/(i+1), epoch_acc/((i+1)*len(label))))
+    torch.save(model.state_dict(),  './data/' + args.model +'_'+ args.dataset + '.pt')
+    print('model saved at: %s'%( './data/' + args.model + '_'+ args.dataset + '.pt' ))
     return epoch_loss/len(dataloader), epoch_acc/len(dataloader.dataset)
 
 
