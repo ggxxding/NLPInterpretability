@@ -69,6 +69,8 @@ def main():
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
                                                               output_hidden_states = True)
+        model.load_state_dict(torch.load( './data/' + model_name + '.pt' ) )
+        print('model loaded from %s'%('./data/' + model_name + '.pt'))
         model.to(device)
         tokenizer = BertTokenizer.from_pretrained(model_name)
         test_loss, test_acc = test(model, test_dataloader, tokenizer, device)
