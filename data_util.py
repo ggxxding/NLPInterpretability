@@ -10,9 +10,9 @@ class dataset(Dataset):
         self.sentence2 = data.sentence2.values
         self.label = data.gold_label.values
         self.len = data.shape[0]
-        self.label_dict = {'contradiction':2, 
+        self.label_dict = {'contradiction':0, 
                            'neutral':1,
-                           'entailment':0}
+                           'entailment':2}
         # self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     def __len__(self):

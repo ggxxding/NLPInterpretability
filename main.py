@@ -32,7 +32,7 @@ hidden_dropout_prob = 0.3
 num_labels = 3
 learning_rate = 1e-5
 weight_decay = 1e-2
-epochs = 20
+epochs =15
 batch_size = 32
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
@@ -55,20 +55,20 @@ def main():
         valid_dataset = dataset(dev_dir)
         valid_dataloader = DataLoader(dataset=valid_dataset,batch_size=batch_size ,shuffle=False)
 
-        model = BertForSequenceClassification.from_pretrained(model_name, 
+        model = BertForSequenceClassification.from_pretrained(args.model, 
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
                                                               output_hidden_states = True)
         model.to(device)
-        tokenizer = BertTokenizer.from_pretrained(model_name)
+        tokenizer = BertTokenizer.from_pretrained(args.model)
 
         # 定义优化器和损失函数
         # Prepare optimizer and schedule (linear warmup and decay)
         # 设置 bias 和 LayerNorm.weight 不使用 weight_decay
         no_decay = ['bias', 'LayerNorm.weight']
         optimizer_grouped_parameters = [
-                {'params': [p for n, p in list(model.named_parameters()) if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
-                {'params': [p for n, p in list(model.named_parameters()) if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
+                {'params': [p for n, p in model.named_parameters() if not any(nd in n for nd in no_decay)], 'weight_decay': weight_decay},
+                {'params': [p for n, p in model.named_parameters() if any(nd in n for nd in no_decay)], 'weight_decay': 0.0}
         ]
 
         # no_decay = ['bias', 'gamma', 'beta']
@@ -87,20 +87,20 @@ def main():
             print('        , valid loss: %.3f, valid_acc: %.3f'%(valid_loss,valid_acc))
     if args.do_eval:
         if args.dataset == 'snli_ori':
-            eval_dir = '../data/NLI/original/test.tsv'
+            eval_dir = '../data/snli/snli_1.0_test.txt'
         elif args.dataset == 'snli_aug':
             eval_dir = '../data/NLI/all_combined/test.tsv'
 
         test_dataset = dataset(eval_dir)
         test_dataloader = DataLoader(dataset=test_dataset,batch_size=batch_size ,shuffle=False)
-        model = BertForSequenceClassification.from_pretrained(model_name, 
+        model = BertForSequenceClassification.from_pretrained(args.model, 
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
                                                               output_hidden_states = True)
         model.load_state_dict(torch.load( './data/' + args.model + '_'+ args.dataset + '.pt' ) )
         print('model loaded from %s'%('./data/' + args.model + '_'+ args.dataset + '.pt'))
         model.to(device)
-        tokenizer = BertTokenizer.from_pretrained(model_name)
+        tokenizer = BertTokenizer.from_pretrained(args.model)
         test_loss, test_acc = test(model, test_dataloader, tokenizer, device)
         print('test acc: %.3f'% test_acc)
 
