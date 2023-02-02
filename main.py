@@ -32,7 +32,7 @@ hidden_dropout_prob = 0.3
 num_labels = 3
 learning_rate = 1e-5
 weight_decay = 1e-2
-epochs =15
+epochs =20
 batch_size = 32
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
@@ -44,10 +44,14 @@ def main():
     if args.do_train:
         if args.dataset == 'snli_ori':
             train_dir = '../data/NLI/original/train.tsv'
-            dev_dir = '../data/NLI/original/dev.tsv'
+            # dev_dir = '../data/NLI/original/dev.tsv'
+            dev_dir = '../data/snli/snli_1.0_test.txt' #test
+
         elif args.dataset == 'snli_aug':
             train_dir = '../data/NLI/all_combined/train.tsv'
-            dev_dir = '../data/NLI/all_combined/dev.tsv'
+            # dev_dir = '../data/NLI/all_combined/dev.tsv'
+            dev_dir = '../data/NLI/all_combined/test.tsv' #test
+
 
         train_dataset = dataset(train_dir)
         train_dataloader = DataLoader(dataset=train_dataset,batch_size=batch_size ,shuffle=True)
@@ -62,7 +66,6 @@ def main():
         model.to(device)
         tokenizer = BertTokenizer.from_pretrained(args.model)
 
-        # 定义优化器和损失函数
         # Prepare optimizer and schedule (linear warmup and decay)
         # 设置 bias 和 LayerNorm.weight 不使用 weight_decay
         no_decay = ['bias', 'LayerNorm.weight']
@@ -112,6 +115,7 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
     epoch_acc   = 0
     for i,batch in enumerate(dataloader):
         text   = batch[0]
+        text = list(zip( text[0], text[1] ))
         label = torch.tensor(batch[1]).to(device)
 
         inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
@@ -132,7 +136,7 @@ def train(model, tokenizer, dataloader, optimizer, criterion, device):
         epoch_loss += loss.item()
         epoch_acc += acc
 
-        if i % 10 == 0 :
+        if i % 100 == 0 :
             print("step %3d, loss: %.3f, acc: %.3f"%( i+1, epoch_loss/(i+1), epoch_acc/((i+1)*len(label))))
     torch.save(model.state_dict(),  './data/' + args.model +'_'+ args.dataset + '.pt')
     print('model saved at: %s'%( './data/' + args.model + '_'+ args.dataset + '.pt' ))
@@ -146,6 +150,7 @@ def evaluate(model, dataloader, tokenizer, device):
     with torch.no_grad():
         for _, batch in enumerate(dataloader):
             text   = batch[0]
+            text = list(zip( text[0], text[1] ))
             label = torch.tensor(batch[1]).to(device)
 
             inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
@@ -169,6 +174,7 @@ def test(model, dataloader, tokenizer, device):
     with torch.no_grad():
         for _, batch in enumerate(dataloader):
             text = batch[0]
+            text = list(zip( text[0], text[1] ))
             label = torch.tensor(batch[1]).to(device)
             inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
             output = model(**inp, labels=label)
