@@ -27,13 +27,14 @@ parser.add_argument("--model",
 args = parser.parse_args()
 model_name = 'bert-base-uncased'
 
-# hyperparam
+# hyperparam ori 75.9acc  0.3hidden 25epoch 32batch
 hidden_dropout_prob = 0.3
 num_labels = 3
+epochs =20
+batch_size = 16 #64
 learning_rate = 1e-5
 weight_decay = 1e-2
-epochs =20
-batch_size = 32
+
 device = torch.device("cuda:0" if torch.cuda.is_available() else "mps")
 
 
@@ -96,6 +97,8 @@ def main():
 
         test_dataset = dataset(eval_dir)
         test_dataloader = DataLoader(dataset=test_dataset,batch_size=batch_size ,shuffle=False)
+
+        # output[2] = hidden states, [L1,...,L12,output]
         model = BertForSequenceClassification.from_pretrained(args.model, 
                                                               num_labels = num_labels, 
                                                               hidden_dropout_prob = hidden_dropout_prob,
@@ -178,6 +181,8 @@ def test(model, dataloader, tokenizer, device):
             label = torch.tensor(batch[1]).to(device)
             inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
             output = model(**inp, labels=label)
+            print(len(output[2]))
+            print(output[2][12])
             pred_label = output[1].argmax(dim=1)
             loss = output[0]
             acc = ((pred_label == label.view(-1)).sum()).item()

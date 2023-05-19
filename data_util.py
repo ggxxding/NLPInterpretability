@@ -11,9 +11,9 @@ class dataset(Dataset):
         self.label = data.gold_label.values
         self.len = data.shape[0]
         self.label_dict = { 
-            'entailment':0,
+            'entailment':2,
             'neutral':1,
-            'contradiction':2}
+            'contradiction':0}
         # self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
 
     def __len__(self):
