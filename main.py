@@ -182,7 +182,10 @@ def test(model, dataloader, tokenizer, device):
             inp = tokenizer(text, padding = 'max_length', truncation = True, max_length = 128, return_tensors = 'pt').to(device)
             output = model(**inp, labels=label)
             print(len(output[2]))
-            print(output[2][12])
+            print(output[2][12].shape)
+            print(output[2][12][:,0].shape)
+            print(output[2][12][:,0])# [CLS] [16,768]
+            quit()
             pred_label = output[1].argmax(dim=1)
             loss = output[0]
             acc = ((pred_label == label.view(-1)).sum()).item()
