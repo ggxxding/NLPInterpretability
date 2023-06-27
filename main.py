@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 from transformers import BertForSequenceClassification ,BertTokenizer, AdamW
 from data_util import dataset
+from jsondatautil import JsonDataset
 from torch.utils.data import DataLoader
 import argparse
 
@@ -52,12 +53,18 @@ def main():
             train_dir = '../data/NLI/all_combined/train.tsv'
             # dev_dir = '../data/NLI/all_combined/dev.tsv'
             dev_dir = '../data/NLI/all_combined/test.tsv' #test
+        elif args.dataset == 'anli':
+            train_dir = '../data/anli_v1.0/R1/train.jsonl'
+            dev_dir = '../data/anli_v1.0/R1/dev.jsonl'
 
+        if args.dataset == 'anli':
+            train_dataset = JsonDataset(train_dir)
+            valid_dataset = JsonDataset(dev_dir)
+        else:
+            train_dataset = dataset(train_dir)
+            valid_dataset = dataset(dev_dir)
 
-        train_dataset = dataset(train_dir)
         train_dataloader = DataLoader(dataset=train_dataset,batch_size=batch_size ,shuffle=True)
-
-        valid_dataset = dataset(dev_dir)
         valid_dataloader = DataLoader(dataset=valid_dataset,batch_size=batch_size ,shuffle=False)
 
         model = BertForSequenceClassification.from_pretrained(args.model, 
@@ -94,8 +101,13 @@ def main():
             eval_dir = '../data/snli/snli_1.0_test.txt'
         elif args.dataset == 'snli_aug':
             eval_dir = '../data/NLI/all_combined/test.tsv'
+        elif args.dataset == 'anli':
+            eval_dir = '../data/anli/R1/test.jsonl'
 
-        test_dataset = dataset(eval_dir)
+        if args.dataset == 'anli':
+            test_dataset = JsonDataset(eval_dir)
+        else:
+            test_dataset = dataset(eval_dir)
         test_dataloader = DataLoader(dataset=test_dataset,batch_size=batch_size ,shuffle=False)
 
         # output[2] = hidden states, [L1,...,L12,output]
