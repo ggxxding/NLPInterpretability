@@ -1,5 +1,6 @@
 import pandas as pd
 from torch.utils.data import Dataset, DataLoader
+import json
 
 class dataset(Dataset):
     def __init__(self,filepath):
@@ -47,6 +48,24 @@ class JsonDataset(Dataset):
     def __getitem__(self, item):
         tokens = [self.context[item],  self.hypothesis[item]]
         # ids = self.tokenizer.encode(tokens, padding = 'max_length', max_length = 128)
+        return tokens, self.label_dict[self.label[item]]
+    
+class HansDataset(Dataset):
+    def __init__ (self,filepath):
+        data = pd.read_csv(filepath, sep='\t')
+        data = data.dropna(subset = ['sentence1','sentence2','gold_label'],how = 'any')
+        data = data[  -data.gold_label.isin(['-'])  ]
+        self.sentence1 = data.sentence1.values
+        self.sentence2 = data.sentence2.values
+        self.label = data.gold_label.values
+        self.len = data.shape[0]
+        self.label_dict = { 
+            'entailment':2,
+            'non-entailment':1}
+    def __len__(self):
+        return self.len
+    def __getitem__(self,item):
+        tokens = [self.sentence1[item],  self.sentence2[item]]
         return tokens, self.label_dict[self.label[item]]
 
 if __name__ == '__main__':
